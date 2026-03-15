@@ -463,57 +463,90 @@ function openScanModal(){
 function closeScanModal(){document.getElementById('scan-overlay').classList.remove('open')}
 function closeScanOnBg(e){if(e.target===document.getElementById('scan-overlay'))closeScanModal()}
 
+async function compressImage(file){
+  return new Promise((resolve)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=function(){
+      const canvas=document.createElement('canvas');
+      let w=img.width,h=img.height;
+      const MAX=1200;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg',0.82));
+    };
+    img.src=url;
+  });
+}
+
 async function handleImageUpload(event){
   const file=event.target.files[0];
   if(!file)return;
-  const reader=new FileReader();
-  reader.onload=async function(e){
-    const base64=e.target.result.split(',')[1];
-    const mediaType=file.type||'image/jpeg';
-    document.getElementById('preview').src=e.target.result;
+  document.getElementById('upload-zone').style.display='none';
+  document.getElementById('analyzing').style.display='flex';
+  document.getElementById('scan-form').style.display='none';
+  try{
+    const dataUrl=await compressImage(file);
+    const base64=dataUrl.split(',')[1];
+    document.getElementById('preview').src=dataUrl;
     document.getElementById('preview').style.display='block';
-    document.getElementById('upload-zone').style.display='none';
-    document.getElementById('analyzing').style.display='flex';
-    document.getElementById('scan-form').style.display='none';
-    try{
-      const result=await analyzeImage(base64,mediaType);
-      scanResult=result;
-      buildScanForm(result);
-      document.getElementById('scan-form').style.display='block';
-      showToast('Bilgiler otomatik dolduruldu!');
-    } catch(err){
-      showToast('Analiz başarısız — lütfen tekrar dene');
-      document.getElementById('upload-zone').style.display='block';
-    } finally{
-      document.getElementById('analyzing').style.display='none';
-    }
-  };
-  reader.readAsDataURL(file);
+    const result=await analyzeImage(base64,'image/jpeg');
+    scanResult=result;
+    buildScanForm(result);
+    document.getElementById('scan-form').style.display='block';
+    showToast('Bilgiler otomatik dolduruldu!');
+  } catch(err){
+    console.error('Analiz hatası:',err);
+    const msg=err.message||'';
+    if(msg.includes('no key'))showToast('API anahtarı girilmedi — Ayarlar\'a git');
+    else if(msg.includes('no campaign'))showToast('Görselde fırsat bulunamadı');
+    else if(msg.includes('401'))showToast('API anahtarı geçersiz — Ayarlar\'dan kontrol et');
+    else showToast('Analiz başarısız: '+msg.substring(0,60));
+    document.getElementById('preview').style.display='none';
+    document.getElementById('upload-zone').style.display='block';
+    document.getElementById('file-input').value='';
+  } finally{
+    document.getElementById('analyzing').style.display='none';
+  }
 }
 
 async function analyzeImage(base64,mediaType){
   const apiKey=localStorage.getItem('anthropic_key')||'';
   if(!apiKey)throw new Error('no key');
   const today=new Date().toISOString().split('T')[0];
+  const prompt='Bu bir Turk mobil uygulamasinin ekran goruntusu. Kampanya bilgilerini cikar. SADECE JSON dondur: {"brand":"kampanyanin gerceklestigi yer adı (uygulamanin adini degil, kampanyanin gercerligi yeri yaz, orn: Atasun Optik, ISPARK, SushiCo, Popeyes, Grosper)","title":"kampanya ozeti Turkce max 60 karakter","discount":"indirim veya hediye (orn: %10, 125 TL, Ucretsiz Park - yoksa bos string)","code":"kampanya kodu (yoksa bos string)","date":"bitis tarihi YYYY-MM-DD, bugun '+today+', gormuyorsan bos string","cat":"banka veya market veya yemek veya diger"} - Kampanya yoksa: {"error":"no_campaign"}';
   const resp=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
     body:JSON.stringify({
       model:'claude-sonnet-4-20250514',
-      max_tokens:800,
+      max_tokens:600,
       messages:[{
         role:'user',
         content:[
           {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-          {type:'text',text:`Bu mobil uygulama ekran görüntüsündeki kampanya/fırsat bilgilerini çıkar. SADECE JSON döndür, başka hiçbir şey yazma:\n\n{"brand":"marka adı","title":"kampanya başlığı Türkçe","discount":"indirim oranı veya tutarı (yoksa boş)","code":"fırsat kodu (yoksa boş)","date":"son kullanma tarihi YYYY-MM-DD (bugün:${today}, görmüyorsan boş)","cat":"banka/market/yemek/diger"}\n\nFırsat yoksa: {"error":"no_campaign"}`}
+          {type:'text',text:prompt}
         ]
       }]
     })
   });
-  if(!resp.ok)throw new Error('api error');
+  if(!resp.ok){
+    let errText='';
+    try{const e=await resp.json();errText=e.error?.message||resp.status;}catch(x){errText=resp.status;}
+    throw new Error(String(errText));
+  }
   const d=await resp.json();
   const text=d.content.map(i=>i.text||'').join('');
-  const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+  const jsonMatch=text.match(/\{[\s\S]*\}/);
+  if(!jsonMatch)throw new Error('JSON parse hatasi');
+  const parsed=JSON.parse(jsonMatch[0]);
   if(parsed.error)throw new Error('no campaign');
   return parsed;
 }
