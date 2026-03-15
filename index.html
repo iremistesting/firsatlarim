@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fırsatlarım">
+<meta name="theme-color" content="#1a1a2e">
+<title>Fırsatlarım</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#f0efe8;font-family:-apple-system,'Helvetica Neue',sans-serif}
+:root{
+  --brand:#1a1a2e;--accent:#e94560;
+  --bg:#ffffff;--bg2:#f5f4ef;--bg3:#f0efe8;
+  --text:#1a1a1a;--text2:#666;--text3:#999;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+  --success-bg:#eaf3de;--success-text:#27500a;
+  --info-bg:#e6f1fb;--info-text:#0c447c;
+  --warn-bg:#faeeda;--warn-text:#633806;
+  --danger-bg:#fcebeb;--danger-text:#501313;
+  --radius:10px;--radius-lg:14px;--radius-xl:20px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#111;
+    --text:#f0f0f0;--text2:#aaa;--text3:#666;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+    --success-bg:#1a2e0f;--success-text:#9fe17a;
+    --info-bg:#0c1f35;--info-text:#85b7eb;
+    --warn-bg:#2e1f05;--warn-text:#f0b45a;
+    --danger-bg:#2e0f0f;--danger-text:#f09595;
+  }
+}
+
+.app{max-width:430px;margin:0 auto;background:var(--bg3);min-height:100vh;position:relative;overflow:hidden}
+
+/* HEADER */
+.header{background:var(--brand);padding:52px 16px 16px;color:#fff}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start}
+.header h1{font-size:22px;font-weight:600;letter-spacing:-0.5px}
+.header p{font-size:12px;opacity:0.55;margin-top:3px}
+.header-actions{display:flex;gap:8px}
+.icon-btn{background:rgba(255,255,255,0.12);border:none;color:#fff;border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
+.stat-card{background:var(--bg);border-radius:var(--radius);padding:10px;text-align:center;border:0.5px solid var(--border)}
+.stat-num{font-size:24px;font-weight:600;color:var(--text)}
+.stat-num.urgent{color:#c0392b}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* TABS */
+.tabs{display:flex;padding:0 12px 10px;overflow-x:auto;scrollbar-width:none;gap:6px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;border:0.5px solid var(--border);background:var(--bg);color:var(--text2)}
+.tab.active{background:var(--brand);color:#fff;border-color:transparent}
+
+/* CAMPAIGNS */
+.campaigns{padding:0 12px;display:flex;flex-direction:column;gap:8px;padding-bottom:8px}
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:13px;cursor:pointer;transition:transform 0.1s}
+.card:active{transform:scale(0.98)}
+.card.urgent{border-left:3px solid #c0392b;border-radius:0 var(--radius-lg) var(--radius-lg) 0}
+.card.soon{border-left:3px solid #d35400;border-radius:0 var(--radius-lg) var(--radius-lg) 0}
+.card-top{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;letter-spacing:-0.5px}
+.card-info{flex:1;min-width:0}
+.card-brand{font-size:14px;font-weight:600;color:var(--text)}
+.card-title{font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge-row{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.badge{font-size:11px;padding:3px 9px;border-radius:12px;font-weight:600}
+.badge.discount{background:var(--success-bg);color:var(--success-text)}
+.badge.code{background:var(--info-bg);color:var(--info-text);font-family:monospace;letter-spacing:0.5px}
+.badge.days-ok{background:var(--success-bg);color:var(--success-text)}
+.badge.days-soon{background:var(--warn-bg);color:var(--warn-text)}
+.badge.days-urgent{background:var(--danger-bg);color:var(--danger-text)}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text2)}
+.empty-state svg{opacity:0.25;margin-bottom:12px}
+.empty-state p{font-size:15px;font-weight:500;color:var(--text)}
+.empty-state span{font-size:13px;margin-top:4px;display:block}
+
+/* BOTTOM ACTIONS */
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px 24px}
+.add-btn{padding:13px;border-radius:var(--radius-lg);background:var(--brand);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer}
+.scan-btn{padding:13px;border-radius:var(--radius-lg);background:var(--bg);color:var(--text);border:0.5px solid var(--border2);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+
+/* MODALS */
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.sheet{background:var(--bg);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:20px 16px 36px;width:100%;max-width:430px;max-height:92vh;overflow-y:auto}
+.sheet-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
+.sheet h2{font-size:17px;font-weight:600;margin-bottom:16px;color:var(--text)}
+
+/* FORM */
+.form-group{margin-bottom:13px}
+.form-group label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px;font-weight:500}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:11px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:15px;background:var(--bg2);color:var(--text);-webkit-appearance:none}
+.form-group textarea{resize:none;height:70px;font-size:13px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.btn-cancel{padding:13px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text2);font-size:15px;cursor:pointer}
+.btn-save{padding:13px;border-radius:var(--radius);background:var(--brand);color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer}
+
+/* UPLOAD */
+.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:22px;text-align:center;cursor:pointer;margin-bottom:14px;background:var(--bg2)}
+.upload-zone p{font-size:13px;color:var(--text2);margin-top:8px}
+.upload-zone small{font-size:11px;color:var(--text3);margin-top:3px;display:block}
+.preview-img{width:100%;max-height:130px;object-fit:cover;border-radius:var(--radius);margin-bottom:12px;border:0.5px solid var(--border)}
+.analyzing{display:flex;align-items:center;gap:10px;padding:13px;background:var(--bg2);border-radius:var(--radius);margin-bottom:13px;font-size:13px;color:var(--text2)}
+.dot-anim{display:inline-flex;gap:4px}
+.dot-anim span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce 1.2s infinite}
+.dot-anim span:nth-child(2){animation-delay:.2s}
+.dot-anim span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:scale(0.5);opacity:0.3}40%{transform:scale(1);opacity:1}}
+.ai-badge{font-size:10px;background:var(--success-bg);color:var(--success-text);padding:2px 7px;border-radius:8px;margin-left:5px;font-weight:600}
+.sep{display:flex;align-items:center;gap:8px;margin:14px 0}
+.sep span{font-size:12px;color:var(--text3);white-space:nowrap}
+.sep::before,.sep::after{content:'';flex:1;height:0.5px;background:var(--border)}
+
+/* SETTINGS */
+.settings-section{margin-bottom:20px}
+.settings-section h3{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;padding:0 4px}
+.settings-row{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.settings-item{padding:13px 14px;border-bottom:0.5px solid var(--border);display:flex;flex-direction:column;gap:4px}
+.settings-item:last-child{border-bottom:none}
+.settings-item label{font-size:13px;font-weight:500;color:var(--text)}
+.settings-item small{font-size:12px;color:var(--text2);line-height:1.4}
+.settings-item input{margin-top:8px;width:100%;padding:10px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:14px;background:var(--bg2);color:var(--text);font-family:monospace}
+.api-status{display:inline-flex;align-items:center;gap:5px;font-size:12px;margin-top:6px;padding:3px 9px;border-radius:10px;font-weight:500}
+.api-status.ok{background:var(--success-bg);color:var(--success-text)}
+.api-status.missing{background:var(--danger-bg);color:var(--danger-text)}
+.save-settings-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;margin-top:16px}
+.info-box{background:var(--info-bg);border-radius:var(--radius);padding:12px 14px;font-size:12px;color:var(--info-text);line-height:1.6;margin-top:10px}
+.info-box a{color:var(--info-text);font-weight:600}
+
+/* TOAST */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:11px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- MAIN VIEW -->
+  <div id="view-main">
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <h1>Fırsatlarım</h1>
+          <p id="date-str"></p>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" onclick="requestNotif()" title="Bildirimler">
+            <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </button>
+          <button class="icon-btn" onclick="openSettings()" title="Ayarlar">
+            <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="s-total">0</div><div class="stat-lbl">Toplam</div></div>
+      <div class="stat-card"><div class="stat-num urgent" id="s-urgent">0</div><div class="stat-lbl">Bu hafta bitiyor</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-active">0</div><div class="stat-lbl">Aktif</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="filterTab('all',this)">Tümü</button>
+      <button class="tab" onclick="filterTab('banka',this)">Banka</button>
+      <button class="tab" onclick="filterTab('market',this)">Market</button>
+      <button class="tab" onclick="filterTab('yemek',this)">Yemek</button>
+      <button class="tab" onclick="filterTab('diger',this)">Diğer</button>
+    </div>
+
+    <div class="campaigns" id="list"></div>
+
+    <div class="btn-row">
+      <button class="scan-btn" onclick="openScanModal()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zM18 14h3M14 18v3M18 18h3v3h-3z"/></svg>
+        Ekran görüntüsü
+      </button>
+      <button class="add-btn" onclick="openAddModal()">+ Fırsat ekle</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div id="view-settings" style="display:none;padding:0 12px 36px">
+    <div style="background:var(--brand);padding:52px 16px 16px;margin:0 -12px 16px;display:flex;align-items:center;gap:12px">
+      <button onclick="closeSettings()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <h1 style="color:#fff;font-size:20px;font-weight:600">Ayarlar</h1>
+    </div>
+
+    <div class="settings-section">
+      <h3>Claude API Anahtarı</h3>
+      <div class="settings-row">
+        <div class="settings-item">
+          <label>API Anahtarı</label>
+          <small>Ekran görüntüsü analizi için Anthropic API anahtarı gerekli. Anahtar sadece bu cihazda saklanır, hiçbir yere gönderilmez.</small>
+          <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
+          <div id="api-status"></div>
+        </div>
+      </div>
+      <div class="info-box">
+        API anahtarı almak için: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> adresine git, hesap aç ve yeni bir anahtar oluştur. Ücretsiz kredi ile başlayabilirsin.
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Bildirimler</h3>
+      <div class="settings-row">
+        <div class="settings-item">
+          <label>Son kullanma tarihi uyarısı</label>
+          <small>Fırsatların süresi dolmadan 3 gün önce tarayıcı bildirimi alırsın.</small>
+          <button onclick="requestNotif()" style="margin-top:8px;padding:9px 16px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;align-self:flex-start">Bildirimlere İzin Ver</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Veriler</h3>
+      <div class="settings-row">
+        <div class="settings-item">
+          <label>Tüm fırsatları sil</label>
+          <small>Kayıtlı tüm fırsat verileri silinir. Bu işlem geri alınamaz.</small>
+          <button onclick="clearAllData()" style="margin-top:8px;padding:9px 16px;background:var(--danger-bg);color:var(--danger-text);border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer">Verileri Temizle</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="save-settings-btn" onclick="saveSettings()">Kaydet</button>
+  </div>
+
+</div>
+
+<!-- SCAN MODAL -->
+<div class="overlay" id="scan-overlay" onclick="closeScanOnBg(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Ekran görüntüsünden ekle</h2>
+
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:0.35"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p>Fırsat ekran görüntüsünü yükle</p>
+      <small>Akbank, Migros, Getir, Vodafone... herhangi bir uygulama</small>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+    <img id="preview" class="preview-img" style="display:none">
+    <div class="analyzing" id="analyzing" style="display:none">
+      <div class="dot-anim"><span></span><span></span><span></span></div>
+      Görsel analiz ediliyor...
+    </div>
+
+    <div id="scan-form" style="display:none">
+      <div class="sep"><span>Bulunan bilgiler — düzenleyebilirsin</span></div>
+      <div id="scan-form-inner"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeScanModal()">İptal</button>
+        <button class="btn-save" onclick="saveScanCampaign()">Kaydet</button>
+      </div>
+    </div>
+
+    <div id="no-api-warning" style="display:none;background:var(--warn-bg);color:var(--warn-text);border-radius:var(--radius);padding:13px 14px;font-size:13px;line-height:1.6">
+      Ekran görüntüsü analizi için API anahtarı gerekli. <strong>Ayarlar</strong> ekranından anahtarını ekle.
+      <br><button onclick="closeScanModal();openSettings()" style="margin-top:10px;padding:8px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Ayarlara git</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="overlay" id="add-overlay" onclick="closeAddOnBg(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Yeni Fırsat Ekle</h2>
+    <div class="form-group">
+      <label>Marka / Uygulama</label>
+      <select id="a-brand" onchange="syncBrand('a')">
+        <option value="">Seç...</option>
+        <option>Akbank</option><option>Yapı Kredi</option><option>Allianz</option>
+        <option>Vodafone</option><option>Migros</option><option>Petrol Ofisi</option>
+        <option>Amazon</option><option>Getir</option><option>Edenred</option><option>Diğer</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Başlık</label>
+      <input type="text" id="a-title" placeholder="ör. %20 indirim tüm alışverişlerde">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>İndirim / Tutar</label>
+        <input type="text" id="a-discount" placeholder="%20 veya 50₺">
+      </div>
+      <div class="form-group">
+        <label>Kategori</label>
+        <select id="a-cat">
+          <option value="banka">Banka</option>
+          <option value="market">Market</option>
+          <option value="yemek">Yemek</option>
+          <option value="diger">Diğer</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Fırsat Kodu</label>
+        <input type="text" id="a-code" placeholder="ör. YENI20">
+      </div>
+      <div class="form-group">
+        <label>Son Kullanma Tarihi</label>
+        <input type="date" id="a-date">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddModal()">İptal</button>
+      <button class="btn-save" onclick="saveAddCampaign()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS={
+  'Akbank':['#c0392b','#fff'],'Yapı Kredi':['#1a237e','#fff'],'Allianz':['#003781','#fff'],
+  'Vodafone':['#e60000','#fff'],'Migros':['#f39c12','#1a1a2e'],'Petrol Ofisi':['#27ae60','#fff'],
+  'Amazon':['#ff9900','#1a1a2e'],'Getir':['#5d0dff','#fff'],'Edenred':['#d32f2f','#fff']
+};
+const CAT_MAP={'Akbank':'banka','Yapı Kredi':'banka','Allianz':'banka','Vodafone':'diger','Migros':'market','Petrol Ofisi':'diger','Amazon':'diger','Getir':'yemek','Edenred':'yemek'};
+
+function initials(s){return s.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()}
+function logoStyle(b){let c=COLORS[b]||['#888','#fff'];return`background:${c[0]};color:${c[1]}`}
+
+let data=[];
+try{data=JSON.parse(localStorage.getItem('firsatlar')||'[]')}catch(e){data=[]}
+function saveData(){localStorage.setItem('firsatlar',JSON.stringify(data))}
+
+let currentFilter='all';
+let scanResult={};
+
+function daysLeft(d){if(!d)return null;return Math.ceil((new Date(d)-new Date())/(86400000))}
+function daysBadge(d){
+  let n=daysLeft(d);
+  if(n===null)return '';
+  if(n<0)return`<span class="badge days-urgent">Süresi doldu</span>`;
+  if(n===0)return`<span class="badge days-urgent">Bugün bitiyor</span>`;
+  if(n<=3)return`<span class="badge days-urgent">${n} gün kaldı</span>`;
+  if(n<=7)return`<span class="badge days-soon">${n} gün kaldı</span>`;
+  return`<span class="badge days-ok">${n} gün kaldı</span>`;
+}
+
+function render(){
+  let filtered=data.filter(c=>currentFilter==='all'||c.cat===currentFilter);
+  filtered.sort((a,b)=>{
+    let da=daysLeft(a.date),db=daysLeft(b.date);
+    if(da===null&&db===null)return 0;
+    if(da===null)return 1; if(db===null)return -1;
+    return da-db;
+  });
+  const list=document.getElementById('list');
+  if(!filtered.length){
+    list.innerHTML=`<div class="empty-state">
+      <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><path d="M20 12v10H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+      <p>Henüz fırsat yok</p>
+      <span>Ekran görüntüsü yükle veya manuel ekle</span>
+    </div>`;
+    updateStats();return;
+  }
+  list.innerHTML=filtered.map(c=>{
+    let n=daysLeft(c.date);
+    let cls=n!==null&&n<=3?'urgent':n!==null&&n<=7?'soon':'';
+    return`<div class="card ${cls}" onclick="askDelete(${c.id})">
+      <div class="card-top">
+        <div class="logo" style="${logoStyle(c.brand)}">${initials(c.brand)}</div>
+        <div class="card-info">
+          <div class="card-brand">${c.brand}</div>
+          <div class="card-title">${c.title}</div>
+        </div>
+        ${c.discount?`<span class="badge discount">${c.discount}</span>`:''}
+      </div>
+      <div class="badge-row">
+        ${c.code?`<span class="badge code">${c.code}</span>`:''}
+        ${daysBadge(c.date)}
+      </div>
+    </div>`;
+  }).join('');
+  updateStats();
+}
+
+function updateStats(){
+  let active=data.filter(c=>{let n=daysLeft(c.date);return n===null||n>=0});
+  let urgent=data.filter(c=>{let n=daysLeft(c.date);return n!==null&&n>=0&&n<=7});
+  document.getElementById('s-total').textContent=data.length;
+  document.getElementById('s-active').textContent=active.length;
+  document.getElementById('s-urgent').textContent=urgent.length;
+}
+
+function filterTab(cat,el){
+  currentFilter=cat;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function askDelete(id){
+  if(confirm('Bu fırsatı silmek istiyor musun?')){
+    data=data.filter(c=>c.id!==id);saveData();render();
+  }
+}
+
+/* SETTINGS */
+function openSettings(){
+  document.getElementById('view-main').style.display='none';
+  document.getElementById('view-settings').style.display='block';
+  const k=localStorage.getItem('anthropic_key')||'';
+  document.getElementById('api-key-input').value=k;
+  updateApiStatus(k);
+}
+function closeSettings(){
+  document.getElementById('view-settings').style.display='none';
+  document.getElementById('view-main').style.display='block';
+}
+function updateApiStatus(k){
+  const el=document.getElementById('api-status');
+  if(k&&k.startsWith('sk-ant')){
+    el.innerHTML='<span class="api-status ok">Anahtar tanımlandı</span>';
+  } else {
+    el.innerHTML='<span class="api-status missing">Anahtar girilmedi</span>';
+  }
+}
+function saveSettings(){
+  const k=document.getElementById('api-key-input').value.trim();
+  if(k)localStorage.setItem('anthropic_key',k);
+  else localStorage.removeItem('anthropic_key');
+  showToast('Ayarlar kaydedildi');
+  closeSettings();
+}
+function clearAllData(){
+  if(confirm('Tüm fırsatlar silinecek. Emin misin?')){
+    data=[];saveData();render();showToast('Veriler silindi');
+  }
+}
+
+/* SCAN MODAL */
+function openScanModal(){
+  document.getElementById('scan-overlay').classList.add('open');
+  document.getElementById('preview').style.display='none';
+  document.getElementById('analyzing').style.display='none';
+  document.getElementById('scan-form').style.display='none';
+  document.getElementById('no-api-warning').style.display='none';
+  document.getElementById('upload-zone').style.display='block';
+  document.getElementById('file-input').value='';
+  const k=localStorage.getItem('anthropic_key')||'';
+  if(!k){
+    document.getElementById('upload-zone').style.display='none';
+    document.getElementById('no-api-warning').style.display='block';
+  }
+}
+function closeScanModal(){document.getElementById('scan-overlay').classList.remove('open')}
+function closeScanOnBg(e){if(e.target===document.getElementById('scan-overlay'))closeScanModal()}
+
+async function handleImageUpload(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    const base64=e.target.result.split(',')[1];
+    const mediaType=file.type||'image/jpeg';
+    document.getElementById('preview').src=e.target.result;
+    document.getElementById('preview').style.display='block';
+    document.getElementById('upload-zone').style.display='none';
+    document.getElementById('analyzing').style.display='flex';
+    document.getElementById('scan-form').style.display='none';
+    try{
+      const result=await analyzeImage(base64,mediaType);
+      scanResult=result;
+      buildScanForm(result);
+      document.getElementById('scan-form').style.display='block';
+      showToast('Bilgiler otomatik dolduruldu!');
+    } catch(err){
+      showToast('Analiz başarısız — lütfen tekrar dene');
+      document.getElementById('upload-zone').style.display='block';
+    } finally{
+      document.getElementById('analyzing').style.display='none';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzeImage(base64,mediaType){
+  const apiKey=localStorage.getItem('anthropic_key')||'';
+  if(!apiKey)throw new Error('no key');
+  const today=new Date().toISOString().split('T')[0];
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:800,
+      messages:[{
+        role:'user',
+        content:[
+          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+          {type:'text',text:`Bu mobil uygulama ekran görüntüsündeki kampanya/fırsat bilgilerini çıkar. SADECE JSON döndür, başka hiçbir şey yazma:\n\n{"brand":"marka adı","title":"kampanya başlığı Türkçe","discount":"indirim oranı veya tutarı (yoksa boş)","code":"fırsat kodu (yoksa boş)","date":"son kullanma tarihi YYYY-MM-DD (bugün:${today}, görmüyorsan boş)","cat":"banka/market/yemek/diger"}\n\nFırsat yoksa: {"error":"no_campaign"}`}
+        ]
+      }]
+    })
+  });
+  if(!resp.ok)throw new Error('api error');
+  const d=await resp.json();
+  const text=d.content.map(i=>i.text||'').join('');
+  const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+  if(parsed.error)throw new Error('no campaign');
+  return parsed;
+}
+
+function buildScanForm(r){
+  const brands=['Akbank','Yapı Kredi','Allianz','Vodafone','Migros','Petrol Ofisi','Amazon','Getir','Edenred','Diğer'];
+  let brandOptions=brands.map(b=>`<option ${b===r.brand?'selected':''}>${b}</option>`).join('');
+  if(r.brand&&!brands.includes(r.brand))brandOptions+=`<option selected>${r.brand}</option>`;
+  document.getElementById('scan-form-inner').innerHTML=`
+    <div class="form-group">
+      <label>Marka <span class="ai-badge">AI</span></label>
+      <select id="s-brand"><option value="">Seç...</option>${brandOptions}</select>
+    </div>
+    <div class="form-group">
+      <label>Başlık <span class="ai-badge">AI</span></label>
+      <input type="text" id="s-title" value="${r.title||''}">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>İndirim</label>
+        <input type="text" id="s-discount" value="${r.discount||''}">
+      </div>
+      <div class="form-group">
+        <label>Kategori</label>
+        <select id="s-cat">
+          <option value="banka" ${r.cat==='banka'?'selected':''}>Banka</option>
+          <option value="market" ${r.cat==='market'?'selected':''}>Market</option>
+          <option value="yemek" ${r.cat==='yemek'?'selected':''}>Yemek</option>
+          <option value="diger" ${!r.cat||r.cat==='diger'?'selected':''}>Diğer</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Fırsat Kodu ${r.code?'<span class="ai-badge">AI</span>':''}</label>
+        <input type="text" id="s-code" value="${r.code||''}">
+      </div>
+      <div class="form-group">
+        <label>Son Tarih ${r.date?'<span class="ai-badge">AI</span>':''}</label>
+        <input type="date" id="s-date" value="${r.date||''}">
+      </div>
+    </div>`;
+}
+
+function saveScanCampaign(){
+  const brand=document.getElementById('s-brand').value||'Diğer';
+  const title=(document.getElementById('s-title').value||'').trim();
+  if(!title){showToast('Başlık gerekli');return;}
+  data.push({id:Date.now(),brand,title,discount:document.getElementById('s-discount').value.trim(),code:document.getElementById('s-code').value.trim().toUpperCase(),date:document.getElementById('s-date').value,cat:document.getElementById('s-cat').value});
+  saveData();closeScanModal();render();showToast('Fırsat eklendi!');scheduleCheck();
+}
+
+/* ADD MODAL */
+function openAddModal(){document.getElementById('add-overlay').classList.add('open')}
+function closeAddModal(){document.getElementById('add-overlay').classList.remove('open')}
+function closeAddOnBg(e){if(e.target===document.getElementById('add-overlay'))closeAddModal()}
+function syncBrand(p){
+  let v=document.getElementById(p+'-brand').value;
+  if(CAT_MAP[v])document.getElementById(p+'-cat').value=CAT_MAP[v];
+}
+function saveAddCampaign(){
+  const brand=document.getElementById('a-brand').value||'Diğer';
+  const title=(document.getElementById('a-title').value||'').trim();
+  if(!title){showToast('Başlık gerekli');return;}
+  data.push({id:Date.now(),brand,title,discount:document.getElementById('a-discount').value.trim(),code:document.getElementById('a-code').value.trim().toUpperCase(),date:document.getElementById('a-date').value,cat:document.getElementById('a-cat').value});
+  saveData();closeAddModal();render();
+  ['a-title','a-discount','a-code','a-date'].forEach(id=>document.getElementById(id).value='');
+  showToast('Fırsat eklendi!');scheduleCheck();
+}
+
+/* NOTIFICATIONS */
+function requestNotif(){
+  if(!('Notification'in window)){showToast('Tarayıcın bildirim desteklemiyor');return;}
+  Notification.requestPermission().then(p=>{
+    if(p==='granted'){showToast('Bildirimler açıldı!');scheduleCheck();}
+    else showToast('Bildirim izni verilmedi');
+  });
+}
+function scheduleCheck(){
+  if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+  const urgent=data.filter(c=>{let n=daysLeft(c.date);return n!==null&&n>=0&&n<=3});
+  if(urgent.length>0)new Notification('Fırsat Hatırlatıcı',{body:`${urgent.length} fırsatın süresi 3 gün içinde doluyor!`});
+}
+
+/* TOAST */
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+/* INIT */
+document.getElementById('date-str').textContent=new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
+if(data.length===0){
+  function gdo(n){let d=new Date();d.setDate(d.getDate()+n);return d.toISOString().split('T')[0]}
+  data=[
+    {id:1,brand:'Akbank',title:'Restoran harcamalarında geri ödeme',discount:'%10',code:'YEMEK10',date:gdo(5),cat:'banka'},
+    {id:2,brand:'Migros',title:'500₺ üzeri alışverişte indirim',discount:'50₺',code:'',date:gdo(2),cat:'market'},
+    {id:3,brand:'Getir',title:'İlk siparişe özel kampanya',discount:'%20',code:'GETIR20',date:gdo(12),cat:'yemek'},
+    {id:4,brand:'Vodafone',title:'Fatura ödemesinde bonus TL',discount:'25₺',code:'',date:gdo(20),cat:'diger'},
+  ];saveData();
+}
+render();
+</script>
+</body>
+</html>
