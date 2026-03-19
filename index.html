@@ -139,6 +139,7 @@ html,body{height:100%;background:#f0efe8;font-family:-apple-system,'Helvetica Ne
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:11px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 </style>
+<script src="https://js.puter.com/v2/"></script>
 </head>
 <body>
 <div class="app">
@@ -197,21 +198,6 @@ html,body{height:100%;background:#f0efe8;font-family:-apple-system,'Helvetica Ne
     </div>
 
     <div class="settings-section">
-      <h3>Claude API Anahtarı</h3>
-      <div class="settings-row">
-        <div class="settings-item">
-          <label>API Anahtarı</label>
-          <small>Ekran görüntüsü analizi için Anthropic API anahtarı gerekli. Anahtar sadece bu cihazda saklanır, hiçbir yere gönderilmez.</small>
-          <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
-          <div id="api-status"></div>
-        </div>
-      </div>
-      <div class="info-box">
-        API anahtarı almak için: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> adresine git, hesap aç ve yeni bir anahtar oluştur. Ücretsiz kredi ile başlayabilirsin.
-      </div>
-    </div>
-
-    <div class="settings-section">
       <h3>Bildirimler</h3>
       <div class="settings-row">
         <div class="settings-item">
@@ -265,10 +251,6 @@ html,body{height:100%;background:#f0efe8;font-family:-apple-system,'Helvetica Ne
       </div>
     </div>
 
-    <div id="no-api-warning" style="display:none;background:var(--warn-bg);color:var(--warn-text);border-radius:var(--radius);padding:13px 14px;font-size:13px;line-height:1.6">
-      Ekran görüntüsü analizi için API anahtarı gerekli. <strong>Ayarlar</strong> ekranından anahtarını ekle.
-      <br><button onclick="closeScanModal();openSettings()" style="margin-top:10px;padding:8px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Ayarlara git</button>
-    </div>
   </div>
 </div>
 
@@ -416,26 +398,13 @@ function askDelete(id){
 function openSettings(){
   document.getElementById('view-main').style.display='none';
   document.getElementById('view-settings').style.display='block';
-  const k=localStorage.getItem('anthropic_key')||'';
-  document.getElementById('api-key-input').value=k;
-  updateApiStatus(k);
 }
 function closeSettings(){
   document.getElementById('view-settings').style.display='none';
   document.getElementById('view-main').style.display='block';
 }
-function updateApiStatus(k){
-  const el=document.getElementById('api-status');
-  if(k&&k.startsWith('sk-ant')){
-    el.innerHTML='<span class="api-status ok">Anahtar tanımlandı</span>';
-  } else {
-    el.innerHTML='<span class="api-status missing">Anahtar girilmedi</span>';
-  }
-}
+
 function saveSettings(){
-  const k=document.getElementById('api-key-input').value.trim();
-  if(k)localStorage.setItem('anthropic_key',k);
-  else localStorage.removeItem('anthropic_key');
   showToast('Ayarlar kaydedildi');
   closeSettings();
 }
@@ -451,14 +420,8 @@ function openScanModal(){
   document.getElementById('preview').style.display='none';
   document.getElementById('analyzing').style.display='none';
   document.getElementById('scan-form').style.display='none';
-  document.getElementById('no-api-warning').style.display='none';
   document.getElementById('upload-zone').style.display='block';
   document.getElementById('file-input').value='';
-  const k=localStorage.getItem('anthropic_key')||'';
-  if(!k){
-    document.getElementById('upload-zone').style.display='none';
-    document.getElementById('no-api-warning').style.display='block';
-  }
 }
 function closeScanModal(){document.getElementById('scan-overlay').classList.remove('open')}
 function closeScanOnBg(e){if(e.target===document.getElementById('scan-overlay'))closeScanModal()}
@@ -500,10 +463,8 @@ async function handleImageUpload(event){
   } catch(err){
     console.error('Analiz hatası:',err);
     const msg=err.message||'';
-    if(msg.includes('no key'))showToast('API anahtarı girilmedi — Ayarlar\'a git');
-    else if(msg.includes('no campaign'))showToast('Görselde fırsat bulunamadı');
-    else if(msg.includes('401'))showToast('API anahtarı geçersiz — Ayarlar\'dan kontrol et');
-    else showToast('Analiz başarısız: '+msg.substring(0,60));
+    if(msg.includes('no campaign'))showToast('Görselde fırsat bulunamadı');
+    else showToast('Analiz başarısız — tekrar dene');
     document.getElementById('preview').style.display='none';
     document.getElementById('upload-zone').style.display='block';
     document.getElementById('file-input').value='';
@@ -513,37 +474,12 @@ async function handleImageUpload(event){
 }
 
 async function analyzeImage(base64,mediaType){
-  const apiKey=localStorage.getItem('anthropic_key')||'';
-  if(!apiKey)throw new Error('no key');
   const today=new Date().toISOString().split('T')[0];
-  const prompt='Bu bir Turk mobil uygulamasinin ekran goruntusu. Kampanya bilgilerini cikar. SADECE JSON dondur: {"brand":"kampanyanin gerceklestigi yer adı (uygulamanin adini degil, kampanyanin gercerligi yeri yaz, orn: Atasun Optik, ISPARK, SushiCo, Popeyes, Grosper)","title":"kampanya ozeti Turkce max 60 karakter","discount":"indirim veya hediye (orn: %10, 125 TL, Ucretsiz Park - yoksa bos string)","code":"kampanya kodu (yoksa bos string)","date":"bitis tarihi YYYY-MM-DD, bugun '+today+', gormuyorsan bos string","cat":"banka veya market veya yemek veya diger"} - Kampanya yoksa: {"error":"no_campaign"}';
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':apiKey,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    },
-    body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:600,
-      messages:[{
-        role:'user',
-        content:[
-          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-          {type:'text',text:prompt}
-        ]
-      }]
-    })
-  });
-  if(!resp.ok){
-    let errText='';
-    try{const e=await resp.json();errText=e.error?.message||resp.status;}catch(x){errText=resp.status;}
-    throw new Error(String(errText));
-  }
-  const d=await resp.json();
-  const text=d.content.map(i=>i.text||'').join('');
+  const prompt='Bu bir Turk mobil uygulamasinin ekran goruntusu. Kampanya bilgilerini cikar. SADECE JSON dondur: {"brand":"kampanyanin gerceklestigi yer adi (uygulamanin adini degil, kampanyanin gecerligi yeri yaz, orn: Atasun Optik, ISPARK, SushiCo, Popeyes, Grosper)","title":"kampanya ozeti Turkce max 60 karakter","discount":"indirim veya hediye (orn: %10, 125 TL, Ucretsiz Park - yoksa bos string)","code":"kampanya kodu (yoksa bos string)","date":"bitis tarihi YYYY-MM-DD, bugun '+today+', gormuyorsan bos string","cat":"banka veya market veya yemek veya diger"} - Kampanya yoksa: {"error":"no_campaign"}';
+  
+  const dataUrl='data:'+mediaType+';base64,'+base64;
+  const response=await puter.ai.chat(prompt,dataUrl,{model:'grok-2-vision-1212'});
+  const text=typeof response==='string'?response:(response?.message?.content||response?.content||JSON.stringify(response));
   const jsonMatch=text.match(/\{[\s\S]*\}/);
   if(!jsonMatch)throw new Error('JSON parse hatasi');
   const parsed=JSON.parse(jsonMatch[0]);
@@ -650,5 +586,6 @@ if(data.length===0){
 }
 render();
 </script>
+<script src="https://js.puter.com/v2/"></script>
 </body>
 </html>
